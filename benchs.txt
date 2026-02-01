@@ -1,0 +1,21 @@
+buffers of size 1536:
+
+Python  list naive 
+floats : 149 µs ± 32.6 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+
+Python impl with numpy list:
+floats : 838 µs ± 88.4 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+halves : 1.13 ms ± 363 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+int8s : 5.42 ms ± 75.6 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+Scipy implementations with numpy :
+
+float : 10.4 µs ± 263 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+halves: 42.6 µs ± 1.38 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+int8s : 22.8 µs ± 5.14 µs per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+
+C Naive implementation
+float 825 ns
+
+AVX naive implementation
+float 289 ns

@@ -24,8 +24,10 @@ static void BM_cosine_distance(benchmark::State& state)
 
     for (auto _ : state)
     {
+	double result;
         // Prevent compiler from optimizing away the result
-        benchmark::DoNotOptimize(cosine_distance_avx(a.data(), b.data(), a.size()));
+	cosine_distance_avx(a.data(), b.data(), a.size(), &result);
+	benchmark::DoNotOptimize(result);
     }
 }
 

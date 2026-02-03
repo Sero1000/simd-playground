@@ -6,35 +6,43 @@
 #include <xmmintrin.h>
 #include <cmath>
 
-__attribute__((always_inline, target("avx2,fma"))) inline static float approximate(float magnitude_a, float magnitude_b, float dot_product)
+__attribute__((always_inline, target("avx2,fma"))) inline static double approximate(double magnitude_a, double magnitude_b, double dot_product)
 {
-    __m128 magnitudes = _mm_set_ps(magnitude_a, magnitude_b, magnitude_a, magnitude_b);
-    __m128 rsqrt = _mm_rsqrt_ps(magnitudes);
+    __m128d magnitudes = _mm_set_pd(magnitude_a, magnitude_b);
+    __m128d rsqrt = _mm_cvtps_pd(_mm_rsqrt_ps(_mm_cvtpd_ps(magnitudes)));
 
-    __m128 half = _mm_set_ps(0.5, 0.5, 0.5, 0.5);
-    __m128 one_and_half = _mm_set_ps(1.5, 1.5, 1.5, 1.5);
+    __m128d half = _mm_set_pd(0.5, 0.5);
+    __m128d one_and_half = _mm_set_pd(1.5, 1.5);
 
-    __m128 newton_result = _mm_mul_ps(rsqrt, _mm_sub_ps(one_and_half, _mm_mul_ps(half, _mm_mul_ps(magnitudes, _mm_mul_ps(rsqrt, rsqrt)))));
+    __m128d newton_result = _mm_mul_pd(rsqrt, _mm_sub_pd(one_and_half, _mm_mul_pd(half, _mm_mul_pd(magnitudes, _mm_mul_pd(rsqrt, rsqrt)))));
 
-    float a_reciprocal = _mm_cvtss_f32(newton_result);
-    float b_reciprocal = _mm_cvtss_f32(_mm_shuffle_ps(newton_result, newton_result, _MM_SHUFFLE2(1, 1)));
+    double b_reciprocal =_mm_cvtsd_f64(_mm_unpackhi_pd(newton_result, newton_result));
+    double a_reciprocal = _mm_cvtsd_f64(newton_result);
 
     return a_reciprocal * b_reciprocal * dot_product;
 }
-__attribute__((always_inline, target("avx2,fma"))) inline static float reduce(__m256 vec)
+__attribute__((always_inline, target("avx2,fma"))) inline static double reduce(__m256 vec)
 {
     __m128 lo = _mm256_castps256_ps128(vec);
     __m128 hi = _mm256_extractf128_ps(vec, 1);
-    __m128 sum = _mm_add_ps(lo, hi);
 
-    sum = _mm_hadd_ps(sum, sum);
-    sum = _mm_hadd_ps(sum, sum);
+    __m256d lo_double = _mm256_cvtps_pd(lo);
+    __m256d hi_double = _mm256_cvtps_pd(hi);
 
-    return _mm_cvtss_f32(sum);
+    __m256d sum = _mm256_add_pd(lo_double, hi_double);
+
+    __m128d lo_double_2 = _mm256_castpd256_pd128(sum);
+    __m128d hi_double_2 = _mm256_extractf128_pd(sum, 1);
+
+    __m128d sum_2 = _mm_add_pd(lo_double_2, hi_double_2);
+
+    __m128d final_sum = _mm_hadd_pd(sum_2, sum_2);
+
+    return _mm_cvtsd_f64(final_sum);
 }
 
 __attribute__((target("avx2,fma")))
-float cosine_distance_avx(const float* const a, const float* const b, const size_t size)
+void cosine_distance_avx(const float* const a, const float* const b, const size_t size, double* result)
 {
     __m256 dot_product = _mm256_setzero_ps();
     __m256 magnitude_a = _mm256_setzero_ps();
@@ -50,11 +58,11 @@ float cosine_distance_avx(const float* const a, const float* const b, const size
 	dot_product = _mm256_fmadd_ps(ai, bi, dot_product);
     }
 
-    float dot_product_sum = reduce(dot_product);
-    float magnitude_a_sum = reduce(magnitude_a);
-    float magnitude_b_sum = reduce(magnitude_b);
+    double dot_product_sum = reduce(dot_product);
+    double magnitude_a_sum = reduce(magnitude_a);
+    double magnitude_b_sum = reduce(magnitude_b);
 
-    return 1 - approximate(magnitude_a_sum, magnitude_b_sum, dot_product_sum);
+    *result = 1 - approximate(magnitude_a_sum, magnitude_b_sum, dot_product_sum);
 }
 
 float cosine_distance(const float* const a, const float* const b, const size_t size)

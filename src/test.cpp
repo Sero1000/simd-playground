@@ -9,7 +9,8 @@
 constexpr float kEpsilon = 1e-5f;
 
 TEST(CosineDistanceAVXTest, AVXUnit) {
-    float result = cosine_distance_avx(a.data(), b.data(), a.size());
+    double result;
+    cosine_distance_avx(a.data(), b.data(), a.size(), &result);
     float aaa = cosine_distance(a.data(), b.data(), a.size());
 
     // Cosine similarity = 1.0 → distance = 0.0
@@ -26,7 +27,8 @@ TEST(CosineDistanceAVXTest, AVXSimple) {
 	b_test[i - 1] = i;
     }
 
-    float result = cosine_distance_avx(a_test.data(), b_test.data(), a_test.size());
+    double result;
+    cosine_distance_avx(a_test.data(), b_test.data(), a_test.size(), &result);
 
     // Cosine similarity = 1.0 → distance = 0.0
     EXPECT_NEAR(result, 0, kEpsilon);

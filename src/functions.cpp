@@ -4,9 +4,11 @@
 #include <pmmintrin.h>
 #include <immintrin.h>
 #include <xmmintrin.h>
+// #include <random>
 #include <cmath>
 
-__attribute__((always_inline, target("avx2,fma"))) inline static double approximate(double magnitude_a, double magnitude_b, double dot_product)
+__attribute__((always_inline, target("avx2,fma")))
+inline static double approximate(double magnitude_a, double magnitude_b, double dot_product)
 {
     __m128d magnitudes = _mm_set_pd(magnitude_a, magnitude_b);
     __m128d rsqrt = _mm_cvtps_pd(_mm_rsqrt_ps(_mm_cvtpd_ps(magnitudes)));
@@ -21,7 +23,9 @@ __attribute__((always_inline, target("avx2,fma"))) inline static double approxim
 
     return a_reciprocal * b_reciprocal * dot_product;
 }
-__attribute__((always_inline, target("avx2,fma"))) inline static double reduce(__m256 vec)
+
+__attribute__((always_inline, target("avx2,fma"))) 
+inline static double reduce(__m256 vec)
 {
     __m128 lo = _mm256_castps256_ps128(vec);
     __m128 hi = _mm256_extractf128_ps(vec, 1);
@@ -87,3 +91,47 @@ float cosine_distance(const float* const a, const float* const b, const size_t s
   return 1 - (dot_product / ( rsqrt_a * rsqrt_b));
 }
 
+__attribute__((target("avx2,fma"))) 
+void copy_avx(const uint8_t* const src, uint8_t* const dst, const size_t size)
+{
+    for(size_t i = 0; i + 32 <= size; i+= 32)
+    {
+        __m256i ints = _mm256_loadu_si256((__m256i*)(src + i));
+	_mm256_storeu_si256((__m256i*)(dst + i), ints);
+    }
+}
+
+void copy_basic(const uint8_t* const src, uint8_t* const dst, const size_t size)
+{
+      for (size_t i = 0; i < size; ++i)
+          dst[i] = src[i];
+}
+
+void clamp_basic(const float* const src, const size_t size, const float min, const float max, float* const output)
+{
+    for(size_t i = 0; i < size; ++i)
+    {
+	output[i] = std::max(min, std::min(max, src[i]));
+    }
+}
+
+__attribute__((target("avx2"))) 
+ void clamp_avx(const float* const src, const size_t size, const float min, const float max, float* const output)
+{
+    __m256 min_vec = _mm256_set1_ps(min);
+    __m256 max_vec = _mm256_set1_ps(max);
+    size_t i = 0;
+    for(; i + 32 <= size; i+=32) 
+    {
+	__m256 src_vec = _mm256_load_ps(src + i);
+
+	__m256 clamped = _mm256_min_ps(min_vec, _mm256_max_ps(max_vec, src_vec));
+
+	_mm256_storeu_ps(output + i, clamped);
+    }
+
+    for(; i < size; ++i)
+    {
+	output[i] = std::min(min, std::max(max, src[i]));
+    }
+}

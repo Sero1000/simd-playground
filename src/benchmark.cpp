@@ -7,21 +7,6 @@
 // Benchmark
 static void BM_cosine_distance(benchmark::State& state)
 {
-    // const size_t size = state.range(0);
-    // const size_t size = 1536;
-
-    // // Allocate once (not measured)
-    // std::vector<float> a(size), b(size);
-
-    // // Initialize once
-    // std::mt19937 rng(123);
-    // std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-    // for (size_t i = 0; i < size; ++i)
-    // {
-    //     a[i] = dist(rng);
-    //     b[i] = dist(rng);
-    // }
-
     for (auto _ : state)
     {
 	double result;
@@ -31,5 +16,58 @@ static void BM_cosine_distance(benchmark::State& state)
     }
 }
 
-BENCHMARK(BM_cosine_distance);
+static void BM_clamp_basic(benchmark::State& state)
+{
+    constexpr size_t SIZE = 1024 * 1024;
+    // Create RNG
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 1);
+
+    // Allocate source and destination buffers
+    std::vector<float> src(SIZE);
+    std::vector<float> dst(SIZE);
+
+    // Fill source with random data
+    for (size_t i = 0; i < src.size(); ++i) {
+        src[i] = dist(gen);
+    }
+
+    for(auto _ : state)
+    {
+	clamp_basic(src.data(), src.size(), 0.25, 0.75, dst.data());
+
+        benchmark::DoNotOptimize(dst.data());
+        benchmark::ClobberMemory();
+    }
+}
+
+static void BM_clamp_avx(benchmark::State& state)
+{
+    constexpr size_t SIZE = 1024 * 1024;
+    // Create RNG
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 1);
+
+    // Allocate source and destination buffers
+    std::vector<float> src(SIZE);
+    std::vector<float> dst(SIZE);
+
+    // Fill source with random data
+    for (size_t i = 0; i < src.size(); ++i) {
+        src[i] = dist(gen);
+    }
+
+    for(auto _ : state)
+    {
+	clamp_avx(src.data(), src.size(), 0.25, 0.75, dst.data());
+
+        benchmark::DoNotOptimize(dst.data());
+        benchmark::ClobberMemory();
+    }
+}
+
+BENCHMARK(BM_clamp_basic);
+BENCHMARK(BM_clamp_avx);
 BENCHMARK_MAIN();

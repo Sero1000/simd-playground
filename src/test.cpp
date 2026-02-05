@@ -38,53 +38,11 @@ TEST(CosineDistanceAVXTest, AVXSimple) {
 
 TEST(Clamp, ClampTest)
 {
-    constexpr size_t SIZE = 1024 * 1024;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0, 1);
-    std::vector<uint8_t> cacheEvict(SIZE);
+    std::vector<float> result(golden_clamped_input.size());
+    clamp_avx(golden_clamped_input.data(), golden_clamped_input.size(), golden_clamped_min, golden_clamped_max, result.data());
 
+    for(size_t i = 0; i < golden_clamped_input.size(); ++i)
     {
-      std::vector<float> src(SIZE); 
-      std::vector<float> dst(SIZE); 
-
-      // Fill source with random data
-      for (size_t i = 0; i < SIZE; ++i) {
-          src[i] = dist(gen);
-      }
-
-      for (size_t i = 0; i < SIZE; ++i) {
-	++cacheEvict[i];
-      }
-      auto begin = std::chrono::high_resolution_clock::now();
-      
-      clamp_basic(src.data(), src.size(), 0.25, 0.75, dst.data());
-      // for (size_t i = 0; i < SIZE; ++i)
-      //     dst[i] = src[i];
-
-      auto end = std::chrono::high_resolution_clock::now();
-
-      auto ms = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-      std::cout<<"Basic copy : "<<ms.count()<<" ns."<<std::endl;
-    }
-    {
-      std::vector<float> src(SIZE); 
-      std::vector<float> dst(SIZE); 
-
-      // Fill source with random data
-      for (size_t i = 0; i < SIZE; ++i) {
-          src[i] = dist(gen);
-      }
-
-      for (size_t i = 0; i < SIZE; ++i) {
-	++cacheEvict[i];
-      }
-
-      auto begin = std::chrono::high_resolution_clock::now();
-      clamp_avx(src.data(), src.size(), 0.25, 0.75, dst.data());
-      auto end = std::chrono::high_resolution_clock::now();
-
-      auto ms = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-      std::cout<<"Basic copy : "<<ms.count()<<" ns."<<std::endl;
+	EXPECT_NEAR(golden_clamped[i], result[i], kEpsilon) << "index="<<i;
     }
 }

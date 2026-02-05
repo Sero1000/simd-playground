@@ -116,22 +116,22 @@ void clamp_basic(const float* const src, const size_t size, const float min, con
 }
 
 __attribute__((target("avx2"))) 
- void clamp_avx(const float* const src, const size_t size, const float min, const float max, float* const output)
+void clamp_avx(const float* const src, const size_t size, const float min, const float max, float* const output)
 {
     __m256 min_vec = _mm256_set1_ps(min);
     __m256 max_vec = _mm256_set1_ps(max);
     size_t i = 0;
-    for(; i + 32 <= size; i+=32) 
+    for(; i + 8 <= size; i+=8) 
     {
 	__m256 src_vec = _mm256_load_ps(src + i);
 
-	__m256 clamped = _mm256_min_ps(min_vec, _mm256_max_ps(max_vec, src_vec));
+	__m256 clamped = _mm256_min_ps(max_vec, _mm256_max_ps(min_vec, src_vec));
 
 	_mm256_storeu_ps(output + i, clamped);
-    }
 
+    }
     for(; i < size; ++i)
     {
-	output[i] = std::min(min, std::max(max, src[i]));
+	output[i] = std::min(max, std::max(min, src[i]));
     }
 }

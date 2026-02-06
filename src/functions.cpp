@@ -3,8 +3,8 @@
 #include <emmintrin.h>
 #include <pmmintrin.h>
 #include <immintrin.h>
+#include <popcntintrin.h>
 #include <xmmintrin.h>
-// #include <random>
 #include <cmath>
 
 __attribute__((always_inline, target("avx2,fma")))
@@ -135,3 +135,69 @@ void clamp_avx(const float* const src, const size_t size, const float min, const
 	output[i] = std::min(max, std::max(min, src[i]));
     }
 }
+
+void count_predictate(const float* const src, const float limit, const size_t size, size_t* result)
+{
+    size_t count = 0;
+
+    for(int i = 0; i < size; ++i)
+    {
+	if (src[i] < limit)
+	{
+	    ++count;
+	}
+    }
+
+    *result = count;
+}
+
+__attribute__((target("avx2"))) 
+void count_predicate_avx(const float* const src, const float limit, const size_t size, size_t* result)
+{
+    __m256 limit_vec = _mm256_set1_ps(limit);
+    size_t count = 0;
+    size_t i = 0;
+
+    for(; i + 8 <= size; i+=8)
+    {
+	__m256 vec = _mm256_loadu_ps(src + i);
+	__m256 cmp = _mm256_cmp_ps(vec, limit_vec, _CMP_LE_OS);
+
+	int cmp_mask = _mm256_movemask_ps(cmp);
+	count += _mm_popcnt_u32(cmp_mask);
+    }
+
+    for(;i < size; ++i)
+    {
+	if (src[i] < limit)
+	    ++count;
+    }
+
+    *result = count;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

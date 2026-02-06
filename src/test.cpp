@@ -46,3 +46,19 @@ TEST(Clamp, ClampTest)
 	EXPECT_NEAR(golden_clamped[i], result[i], kEpsilon) << "index="<<i;
     }
 }
+
+TEST(Count, CountTest)
+{
+    size_t result;
+    count_predictate(golden_compare_input_data.data(), golden_compare_limit, golden_compare_input_data.size(), &result);
+
+    EXPECT_EQ(result, golden_compare_result);
+}
+
+TEST(Count, CountTestAVX)
+{
+    size_t result;
+    count_predicate_avx(golden_compare_input_data.data(), golden_compare_limit, golden_compare_input_data.size(), &result);
+
+    EXPECT_EQ(result, golden_compare_result);
+}

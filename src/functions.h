@@ -15,6 +15,10 @@ extern "C" void clamp_basic(const float* const src, const size_t size, const flo
 extern "C" void clamp_avx(const float* const src, const size_t size, const float min, const float max, float* const output);
 
 // Counting how many elements are smaller than a given number
-extern "C" void count_predictate(const float* const src, const float limit, const size_t size, size_t* result);
+extern "C" void count_predicate(const float* const src, const float limit, const size_t size, size_t* result);
 
 extern "C" void count_predicate_avx(const float* const src, const float limit, const size_t size, size_t* result);
+
+extern "C" void find_min(const float* const src, const size_t size, float* const result);
+
+extern "C" void find_min_avx(const float* const src, const size_t size, float* const result);

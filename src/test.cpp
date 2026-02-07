@@ -1,11 +1,13 @@
 #include "functions.h"
 #include "test_inputs.h"
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <cmath>
 #include <vector>
 #include <random>
 #include <chrono>
+#include <immintrin.h>
 
 // Helper to compare floats with tolerance
 constexpr float kEpsilon = 1e-5f;
@@ -50,7 +52,7 @@ TEST(Clamp, ClampTest)
 TEST(Count, CountTest)
 {
     size_t result;
-    count_predictate(golden_compare_input_data.data(), golden_compare_limit, golden_compare_input_data.size(), &result);
+    count_predicate(golden_compare_input_data.data(), golden_compare_limit, golden_compare_input_data.size(), &result);
 
     EXPECT_EQ(result, golden_compare_result);
 }
@@ -62,3 +64,14 @@ TEST(Count, CountTestAVX)
 
     EXPECT_EQ(result, golden_compare_result);
 }
+
+TEST(Min, MinTestAVX)
+{
+    auto stl_min = std::min_element(golden_compare_input_data.begin(), golden_compare_input_data.end());
+    float avx_result;
+    find_min_avx(golden_compare_input_data.data(), golden_compare_input_data.size(), &avx_result);
+
+    EXPECT_EQ(*stl_min, avx_result);
+}
+
+

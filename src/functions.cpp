@@ -136,7 +136,7 @@ void clamp_avx(const float* const src, const size_t size, const float min, const
     }
 }
 
-void count_predictate(const float* const src, const float limit, const size_t size, size_t* result)
+void count_predicate(const float* const src, const float limit, const size_t size, size_t* result)
 {
     size_t count = 0;
 
@@ -176,26 +176,52 @@ void count_predicate_avx(const float* const src, const float limit, const size_t
     *result = count;
 }
 
+void find_min(const float* const src, const size_t size, float* const result)
+{
+    float min = src[0];
 
+    for(size_t i = 0; i < size; ++i)
+    {
+	if(src[i] < min)
+	    min = src[i];
+    }
 
+    *result = min;
+}
 
+__attribute__((target("avx2"))) 
+void find_min_avx(const float* const src, const size_t size, float* const result)
+{
+    float min = src[0];    
 
+    size_t i = 0;
+    for(; i + 8 <= size; i += 8)
+    {
+	__m256 vec = _mm256_loadu_ps(src + i);
 
+	__m128 lo = _mm256_castps256_ps128(vec);
+	__m128 hi = _mm256_extractf128_ps(vec, 1);
+	__m128 min128 = _mm_min_ps(lo, hi);
 
+	__m128 shuf = _mm_movehdup_ps(min128);
+	__m128 mins = _mm_min_ps(shuf, min128);
 
+	 shuf = _mm_movehl_ps(shuf, mins);
+	 mins = _mm_min_ss(mins, shuf);
 
+	 float min_in_vec = _mm_cvtss_f32(mins);
+	 if(min_in_vec < min)
+	     min = min_in_vec;
+    }
 
+    for (;i < size; ++i)
+    {
+	if(src[i] < min)
+	    min = src[i];
+    }
 
-
-
-
-
-
-
-
-
-
-
+    *result = min;
+}
 
 
 

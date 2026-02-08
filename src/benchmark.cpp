@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <benchmark/benchmark.h>
 #include <random>
@@ -139,8 +140,7 @@ static void BM_find_min_basic(benchmark::State& state)
     float min;
     for(auto _ : state)
     {
-	find_min(src.data(), src.size(), &min);
-
+	auto min = std::min_element(src.begin(),src.end());
 	benchmark::DoNotOptimize(&min);
 	benchmark::ClobberMemory();
     }

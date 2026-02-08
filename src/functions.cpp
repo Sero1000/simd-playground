@@ -4,6 +4,7 @@
 #include <pmmintrin.h>
 #include <immintrin.h>
 #include <popcntintrin.h>
+#include <smmintrin.h>
 #include <xmmintrin.h>
 #include <cmath>
 
@@ -223,7 +224,58 @@ void find_min_avx(const float* const src, const size_t size, float* const result
     *result = min;
 }
 
+void separate_basic(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result)
+{
+    for(size_t i = 0; i + 3 <= size; i+=3)
+    {
+	float x = src[i];
+	float y = src[i + 1];
+	float z = src[i + 2];
 
+	x_result[i / 3] = x;
+	y_result[i / 3] = y;
+	z_result[i / 3] = z;
+    }
+}
 
+__attribute__((target("avx2,fma")))
+void separate_avx(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result)
+{
+    const size_t NUMBER_OF_POINTS = size / 3;
 
+    size_t i = 0;
+    for(;i + 3 < NUMBER_OF_POINTS; i+=4)
+    {
+	__m128 p1 = _mm_loadu_ps(src + (3 * i));
+	__m128 p2 = _mm_loadu_ps(src + (3 * i + 4));
+	__m128 p3 = _mm_loadu_ps(src + (3 * i + 8));
+
+	__m128 x = _mm_blend_ps(p1, p2, 0b0110); // x0, z1, x2, x1
+	__m128 y = _mm_blend_ps(p2, p3, 0b0110); // y1, x3, y3, y2
+	__m128 z = _mm_blend_ps(p3, p1, 0b0110); // z2, y0, z0, z3
+	
+	x = _mm_blend_ps(x, p3, 0b0010); // x0, x3, x2, x1
+	y = _mm_blend_ps(y, p1, 0b0010); // y1, y0, y3, y2
+	z = _mm_blend_ps(z, p2, 0b0010); // z2, z1, z0, z3
+	
+	x = _mm_shuffle_ps(x, x, _MM_SHUFFLE(1, 2, 3, 0));
+	y = _mm_shuffle_ps(y, y, _MM_SHUFFLE(2, 3, 0, 1));
+	z = _mm_shuffle_ps(z, z, _MM_SHUFFLE(3, 0, 1, 2));
+
+	_mm_storeu_ps(x_result + i, x);
+	_mm_storeu_ps(y_result + i, y);
+	_mm_storeu_ps(z_result + i, z);
+    }
+
+    for (;i < NUMBER_OF_POINTS; ++i)
+    {
+	float x = src[3 * i];
+	float y = src[3 * i + 1];
+	float z = src[3 * i + 2];
+
+	x_result[i] = x;
+	y_result[i] = y;
+	z_result[i] = z;
+    }
+}
 

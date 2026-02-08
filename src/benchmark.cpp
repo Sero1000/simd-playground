@@ -171,8 +171,63 @@ static void BM_find_min_avx(benchmark::State& state)
     }
 }
 
+static void BM_separate(benchmark::State& state)
+{
+    constexpr size_t ELEMENTS = 1024 * 1024;
+    constexpr size_t BUFFER_SIZE = ELEMENTS * 3;
 
-BENCHMARK(BM_find_min_basic);
-BENCHMARK(BM_find_min_avx);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 10);
 
+    std::vector<float> elements(BUFFER_SIZE);
+    for(size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+	elements[i] = dist(gen);
+    }
+
+    std::vector<float> x_buffer(ELEMENTS), y_buffer(ELEMENTS), z_buffer(ELEMENTS);
+
+    for(auto _ : state)
+    {
+	separate_basic(elements.data(), elements.size(), x_buffer.data(), y_buffer.data(), z_buffer.data());
+
+	benchmark::DoNotOptimize(x_buffer.data());
+	benchmark::DoNotOptimize(y_buffer.data());
+	benchmark::DoNotOptimize(z_buffer.data());
+	benchmark::ClobberMemory();
+    }
+}
+
+static void BM_separate_avx(benchmark::State& state)
+{
+    constexpr size_t ELEMENTS = 1024 * 1024;
+    constexpr size_t BUFFER_SIZE = ELEMENTS * 3;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 10);
+
+    std::vector<float> elements(BUFFER_SIZE);
+    for(size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+	elements[i] = dist(gen);
+    }
+
+    std::vector<float> x_buffer(ELEMENTS), y_buffer(ELEMENTS), z_buffer(ELEMENTS);
+
+    for(auto _ : state)
+    {
+	separate_avx(elements.data(), elements.size(), x_buffer.data(), y_buffer.data(), z_buffer.data());
+
+	benchmark::DoNotOptimize(x_buffer.data());
+	benchmark::DoNotOptimize(y_buffer.data());
+	benchmark::DoNotOptimize(z_buffer.data());
+	benchmark::ClobberMemory();
+    }
+}
+
+
+BENCHMARK(BM_separate);
+BENCHMARK(BM_separate_avx);
 BENCHMARK_MAIN();

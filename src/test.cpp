@@ -74,4 +74,54 @@ TEST(Min, MinTestAVX)
     EXPECT_EQ(*stl_min, avx_result);
 }
 
+TEST(Separate, SeparateTest)
+{
+    constexpr size_t ELEMENTS = 1024 * 1024;
+    constexpr size_t BUFFER_SIZE = ELEMENTS * 3;
 
+    std::vector<float> elements(BUFFER_SIZE);
+    for(size_t i = 0; i < ELEMENTS; ++i)
+    {
+	elements[3 * i] = i;
+	elements[3 * i + 1] = i;
+	elements[3 * i + 2] = i;
+    }
+
+    std::vector<float> x_buffer(ELEMENTS), y_buffer(ELEMENTS), z_buffer(ELEMENTS);
+
+    separate_basic(elements.data(), elements.size(), x_buffer.data(), y_buffer.data(), z_buffer.data());
+
+    for(size_t i = 0; i < ELEMENTS;++i)
+    {
+	EXPECT_EQ(x_buffer[i], elements[3 * i])<<", index : "<<i;
+	EXPECT_EQ(y_buffer[i], elements[3 * i + 1])<<", index : "<<i;
+	EXPECT_EQ(z_buffer[i], elements[3 * i + 2])<<", index : "<<i;
+    }
+}
+
+TEST(Separate, SeparateTestAVX)
+{
+    constexpr size_t ELEMENTS = 1024 * 1024;
+    constexpr size_t BUFFER_SIZE = ELEMENTS * 3;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 10);
+
+    std::vector<float> elements(BUFFER_SIZE);
+    for(size_t i = 0; i < BUFFER_SIZE; ++i)
+    {
+	elements[i] = dist(gen);
+    }
+
+    std::vector<float> x_buffer(ELEMENTS), y_buffer(ELEMENTS), z_buffer(ELEMENTS);
+
+    separate_avx(elements.data(), elements.size(), x_buffer.data(), y_buffer.data(), z_buffer.data());
+
+    for(size_t i = 0; i < ELEMENTS;++i)
+    {
+	EXPECT_EQ(x_buffer[i], elements[3 * i])<<", index : "<<i;
+	EXPECT_EQ(y_buffer[i], elements[3 * i + 1])<<", index : "<<i;
+	EXPECT_EQ(z_buffer[i], elements[3 * i + 2])<<", index : "<<i;
+    }
+}

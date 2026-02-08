@@ -22,3 +22,8 @@ extern "C" void count_predicate_avx(const float* const src, const float limit, c
 extern "C" void find_min(const float* const src, const size_t size, float* const result);
 
 extern "C" void find_min_avx(const float* const src, const size_t size, float* const result);
+
+// Seperates an array of 3D point coordinates into separate arrays
+extern "C" void separate_basic(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result);
+
+extern "C" void separate_avx(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result);

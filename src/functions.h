@@ -27,3 +27,9 @@ extern "C" void find_min_avx(const float* const src, const size_t size, float* c
 extern "C" void separate_basic(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result);
 
 extern "C" void separate_avx(const float* const src, const size_t size, float* const x_result, float* const y_result, float* const z_result);
+
+extern "C" void transpose_basic(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix);
+
+extern "C" void transpose_sse(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix);
+
+extern "C" void transpose_avx(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix);

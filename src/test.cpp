@@ -125,3 +125,59 @@ TEST(Separate, SeparateTestAVX)
 	EXPECT_EQ(z_buffer[i], elements[3 * i + 2])<<", index : "<<i;
     }
 }
+
+TEST(Transpose, TransposeTestBasic)
+{
+    constexpr size_t rows = 8;
+    constexpr size_t columns = 8;
+
+    float matrix [rows * columns];
+    float transposed_matrix[rows * columns];
+
+    for(int i = 0; i < rows * columns; ++i)
+    {
+	matrix [i] = i + 1;
+    }
+
+    transpose_basic(matrix, rows, columns, transposed_matrix);
+
+    for(size_t row = 0; row < rows; ++row)
+    {
+	std::cout<<"[ ";
+	for(size_t column = 0; column < columns; ++column)
+	{
+	    std::cout<<transposed_matrix[row * columns + column]<<" ";
+	}
+	std::cout<<" ]"<<std::endl;
+    }
+    int pix = 4;
+    ++pix;
+}
+
+TEST(Transpose, TransposeTestAVX)
+{
+    constexpr size_t rows = 8;
+    constexpr size_t columns = 8;
+
+    float matrix [rows * columns];
+    float transposed_matrix[rows * columns];
+
+    for(int i = 0; i < rows * columns; ++i)
+    {
+	matrix [i] = i + 1;
+    }
+
+    transpose_avx(matrix, rows, columns, transposed_matrix);
+
+    for(size_t row = 0; row < rows; ++row)
+    {
+	std::cout<<"[ ";
+	for(size_t column = 0; column < columns; ++column)
+	{
+	    std::cout<<transposed_matrix[row * columns + column]<<" ";
+	}
+	std::cout<<" ]"<<std::endl;
+    }
+    int pix = 4;
+    ++pix;
+}

@@ -227,7 +227,61 @@ static void BM_separate_avx(benchmark::State& state)
     }
 }
 
+static void BM_transpose_avx(benchmark::State& state)
+{
+    constexpr size_t rows = 8;
+    constexpr size_t columns = 8;
 
-BENCHMARK(BM_separate);
-BENCHMARK(BM_separate_avx);
+    float matrix [rows * columns];
+    float transposed_matrix[rows * columns];
+
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 10);
+
+    for(int i = 0; i < rows * columns; ++i)
+    {
+	matrix [i] = dist(gen);
+    }
+
+    for(auto _ : state)
+    {
+	transpose_avx(matrix, rows, columns, transposed_matrix);
+
+	benchmark::DoNotOptimize(transposed_matrix);
+	benchmark::ClobberMemory();
+    }
+}
+
+static void BM_transpose_basic(benchmark::State& state)
+{
+    constexpr size_t rows = 8;
+    constexpr size_t columns = 8;
+
+    float matrix [rows * columns];
+    float transposed_matrix[rows * columns];
+
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 10);
+
+    for(int i = 0; i < rows * columns; ++i)
+    {
+	matrix [i] = dist(gen);
+    }
+
+    for(auto _ : state)
+    {
+	transpose_basic(matrix, rows, columns, transposed_matrix);
+
+	benchmark::DoNotOptimize(transposed_matrix);
+	benchmark::ClobberMemory();
+    }
+}
+
+
+BENCHMARK(BM_transpose_basic);
+BENCHMARK(BM_transpose_avx);
 BENCHMARK_MAIN();

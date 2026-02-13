@@ -279,3 +279,97 @@ void separate_avx(const float* const src, const size_t size, float* const x_resu
     }
 }
 
+
+void transpose_basic(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix)
+{
+    for(size_t row = 0; row < row_size; ++row)
+    {
+	for(size_t column = 0; column < column_size; ++column)
+	{
+	    float a = src[row * column_size + column];
+	    float b = src[column * column_size + row];
+
+	    transposed_matrix[row * column_size + column] = b;
+	    transposed_matrix[column * column_size + row] = a;
+	}
+    }
+}
+
+__attribute__((target("avx2"))) 
+void transpose_sse(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix)
+{
+    __m128 row1 = _mm_loadu_ps(src);
+    __m128 row2 = _mm_loadu_ps(src + column_size);
+    __m128 row3 = _mm_loadu_ps(src + 2 * column_size);
+    __m128 row4 = _mm_loadu_ps(src + 3 * column_size);
+
+    __m128 unpacked_12lo = _mm_unpacklo_ps(row1, row2);
+    __m128 unpacked_12hi = _mm_unpackhi_ps(row1, row2);
+    __m128 unpacked_34lo = _mm_unpacklo_ps(row3, row4);
+    __m128 unpacked_34hi = _mm_unpackhi_ps(row3, row4);
+
+    __m128 transposed_row_1 = _mm_shuffle_ps(unpacked_12lo, unpacked_34lo, _MM_SHUFFLE(1, 0, 1, 0));
+    __m128 transposed_row_2 = _mm_shuffle_ps(unpacked_12lo, unpacked_34lo, _MM_SHUFFLE(3, 2, 3, 2));
+    __m128 transposed_row_3 = _mm_shuffle_ps(unpacked_12hi, unpacked_34hi, _MM_SHUFFLE(1, 0, 1, 0));
+    __m128 transposed_row_4 = _mm_shuffle_ps(unpacked_12hi, unpacked_34hi, _MM_SHUFFLE(3, 2, 3, 2));
+
+    _mm_storeu_ps(transposed_matrix, transposed_row_1);
+    _mm_storeu_ps(transposed_matrix + column_size, transposed_row_2);
+    _mm_storeu_ps(transposed_matrix + 2 * column_size, transposed_row_3);
+    _mm_storeu_ps(transposed_matrix + 3 * column_size, transposed_row_4);
+}
+
+__attribute__((target("avx2"))) 
+void transpose_avx(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix)
+{
+    __m256 row1 = _mm256_loadu_ps(src);
+    __m256 row2 = _mm256_loadu_ps(src + column_size);
+    __m256 row3 = _mm256_loadu_ps(src + 2 * column_size);
+    __m256 row4 = _mm256_loadu_ps(src + 3 * column_size);
+    __m256 row5 = _mm256_loadu_ps(src + 4 * column_size);
+    __m256 row6 = _mm256_loadu_ps(src + 5 * column_size);
+    __m256 row7 = _mm256_loadu_ps(src + 6 * column_size);
+    __m256 row8 = _mm256_loadu_ps(src + 7 * column_size);
+
+    __m256 unpacked_12lo = _mm256_unpacklo_ps(row1, row2);
+    __m256 unpacked_12hi = _mm256_unpackhi_ps(row1, row2);
+    __m256 unpacked_34lo = _mm256_unpacklo_ps(row3, row4);
+    __m256 unpacked_34hi = _mm256_unpackhi_ps(row3, row4);
+    __m256 unpacked_56lo = _mm256_unpacklo_ps(row5, row6);
+    __m256 unpacked_56hi = _mm256_unpackhi_ps(row5, row6);
+    __m256 unpacked_78lo = _mm256_unpacklo_ps(row7, row8);
+    __m256 unpacked_78hi = _mm256_unpackhi_ps(row7, row8);
+    
+    __m256 transposed_row15_1half = _mm256_shuffle_ps(unpacked_12lo, unpacked_34lo, _MM_SHUFFLE(1, 0, 1, 0));
+    __m256 transposed_row26_1half = _mm256_shuffle_ps(unpacked_12lo, unpacked_34lo, _MM_SHUFFLE(3, 2, 3, 2));
+
+    __m256 transposed_row37_1half = _mm256_shuffle_ps(unpacked_12hi, unpacked_34hi, _MM_SHUFFLE(1, 0, 1, 0));
+    __m256 transposed_row48_1half = _mm256_shuffle_ps(unpacked_12hi, unpacked_34hi, _MM_SHUFFLE(3, 2, 3, 2));
+
+    __m256 transposed_row15_2half = _mm256_shuffle_ps(unpacked_56lo, unpacked_78lo, _MM_SHUFFLE(1, 0, 1, 0));
+    __m256 transposed_row26_2half = _mm256_shuffle_ps(unpacked_56lo, unpacked_78lo, _MM_SHUFFLE(3, 2, 3, 2));
+
+    __m256 transposed_row37_2half = _mm256_shuffle_ps(unpacked_56hi, unpacked_78hi, _MM_SHUFFLE(1, 0, 1, 0));
+    __m256 transposed_row48_2half = _mm256_shuffle_ps(unpacked_56hi, unpacked_78hi, _MM_SHUFFLE(3, 2, 3, 2));
+
+    __m256 transposed_row_1 = _mm256_permute2f128_ps(transposed_row15_1half, transposed_row15_2half, 0x20);
+    __m256 transposed_row_5 = _mm256_permute2f128_ps(transposed_row15_1half, transposed_row15_2half, 0x31);
+
+    __m256 transposed_row_2 = _mm256_permute2f128_ps(transposed_row26_1half, transposed_row26_2half, 0x20);
+    __m256 transposed_row_6 = _mm256_permute2f128_ps(transposed_row26_1half, transposed_row26_2half, 0x31);
+
+    __m256 transposed_row_3 = _mm256_permute2f128_ps(transposed_row37_1half, transposed_row37_2half, 0x20);
+    __m256 transposed_row_7 = _mm256_permute2f128_ps(transposed_row37_1half, transposed_row37_2half, 0x31);
+
+    __m256 transposed_row_4 = _mm256_permute2f128_ps(transposed_row48_1half, transposed_row48_2half, 0x20);
+    __m256 transposed_row_8 = _mm256_permute2f128_ps(transposed_row48_1half, transposed_row48_2half, 0x31);
+
+    _mm256_storeu_ps(transposed_matrix, transposed_row_1);
+    _mm256_storeu_ps(transposed_matrix + column_size, transposed_row_2);
+    _mm256_storeu_ps(transposed_matrix + 2 * column_size, transposed_row_3);
+    _mm256_storeu_ps(transposed_matrix + 3 * column_size, transposed_row_4);
+    _mm256_storeu_ps(transposed_matrix + 4 * column_size, transposed_row_5);
+    _mm256_storeu_ps(transposed_matrix + 5 * column_size, transposed_row_6);
+    _mm256_storeu_ps(transposed_matrix + 6 * column_size, transposed_row_7);
+    _mm256_storeu_ps(transposed_matrix + 7 * column_size, transposed_row_8);
+}

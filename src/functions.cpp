@@ -373,3 +373,39 @@ void transpose_avx(const float* const src, const size_t row_size, const size_t c
     _mm256_storeu_ps(transposed_matrix + 6 * column_size, transposed_row_7);
     _mm256_storeu_ps(transposed_matrix + 7 * column_size, transposed_row_8);
 }
+
+void reference_for_branchless_computation(const float* const src, const size_t size, float* const result)
+{
+
+    for (size_t i = 0; i < size; ++i)
+    {
+	float cur_value = src[i];
+	if (cur_value > 0)
+	{
+	    result[i] = sqrt(cur_value);
+	}
+	else
+	{
+	    result[i] = pow(cur_value, 2);
+	}
+    }
+}
+
+__attribute__((target("avx2"))) 
+void branchless_computation_avx(const float* const src, const size_t size, float* const result)
+{
+    __m256 zeroes = _mm256_set1_ps(0);
+    for(size_t i = 0; i + 7 < size; i += 8)
+    {
+	__m256 vec = _mm256_loadu_ps(src + i);
+	__m256 comparison_mask = _mm256_cmp_ps(vec, zeroes, _CMP_LT_OS);
+
+	__m256 sqrt = _mm256_sqrt_ps(vec);
+	__m256 squared = _mm256_mul_ps(vec, vec);
+
+	__m256 answer = _mm256_blendv_ps(sqrt, squared, comparison_mask);
+
+	_mm256_storeu_ps(result + i, answer);
+    }
+}
+

@@ -33,3 +33,7 @@ extern "C" void transpose_basic(const float* const src, const size_t row_size, c
 extern "C" void transpose_sse(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix);
 
 extern "C" void transpose_avx(const float* const src, const size_t row_size, const size_t column_size, float* const transposed_matrix);
+
+extern "C" void reference_for_branchless_computation(const float* const src, const size_t size, float* const result);
+
+extern "C" void branchless_computation_avx(const float* const src, const size_t size, float* const result);

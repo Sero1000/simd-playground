@@ -178,6 +178,23 @@ TEST(Transpose, TransposeTestAVX)
 	}
 	std::cout<<" ]"<<std::endl;
     }
-    int pix = 4;
-    ++pix;
+}
+
+TEST(Branchless, BranchlessTestAvx)
+{
+    constexpr size_t SIZE = 8;
+    std::vector<float> input = {1,2,-1,-2,3,4,-3,-4};
+
+    constexpr float sqrt_2 = std::sqrt(2.0f);
+    constexpr float sqrt_3 = std::sqrt(3.0f);
+
+    std::vector<float> expected = {1, sqrt_2, 1, 4, sqrt_3, 2, 9, 16};
+
+    std::vector<float> result(SIZE);
+
+    branchless_computation_avx(input.data(), input.size(), result.data());
+    for(size_t i = 0; i < SIZE; ++i)
+    {
+	EXPECT_FLOAT_EQ(expected[i], result[i])<<", index : "<<i;
+    }
 }

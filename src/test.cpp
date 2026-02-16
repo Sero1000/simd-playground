@@ -2,6 +2,7 @@
 #include "test_inputs.h"
 
 #include <algorithm>
+#include <cctype>
 #include <gtest/gtest.h>
 #include <cmath>
 #include <vector>
@@ -197,4 +198,29 @@ TEST(Branchless, BranchlessTestAvx)
     {
 	EXPECT_FLOAT_EQ(expected[i], result[i])<<", index : "<<i;
     }
+}
+
+TEST(Count, AVX)
+{
+    const size_t text_size = 1024;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint8_t> dist(0, 255);
+
+    std::string test_input;
+    test_input.reserve(text_size);
+
+    for(int i = 0; i < text_size; ++i)
+    {
+	test_input.push_back(dist(gen));
+    }
+
+    size_t avxResult;
+
+    size_t number_count = std::count_if(test_input.begin(), test_input.end(), [](char el){return std::isdigit(el);});
+
+    count_numbers_avx(test_input.data(), test_input.size(), &avxResult);
+
+    EXPECT_EQ(avxResult, number_count);
 }

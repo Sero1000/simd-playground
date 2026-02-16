@@ -37,3 +37,7 @@ extern "C" void transpose_avx(const float* const src, const size_t row_size, con
 extern "C" void reference_for_branchless_computation(const float* const src, const size_t size, float* const result);
 
 extern "C" void branchless_computation_avx(const float* const src, const size_t size, float* const result);
+
+extern "C" void count_numbers(const char* const src, const size_t size, size_t* const result);
+
+extern "C" void count_numbers_avx(const char* const src, const size_t size, size_t* const result);

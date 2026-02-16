@@ -281,7 +281,54 @@ static void BM_transpose_basic(benchmark::State& state)
     }
 }
 
+static void BM_count_basic(benchmark::State& state)
+{
+    // const size_t text_size = 1024 * 1024 * 1024; // 10MB
+    const size_t text_size = state.range(0);
 
-BENCHMARK(BM_transpose_basic);
-BENCHMARK(BM_transpose_avx);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint8_t> dist(0, 255);
+
+    std::string input;
+    input.reserve(text_size);
+    for(int i = 0; i < text_size; ++i)
+    {
+	input.push_back(dist(gen));
+    }
+
+    for(auto _ : state)
+    {
+	benchmark::DoNotOptimize(std::count_if(input.begin(), input.end(), [](char el){return std::isdigit(el);}));
+	benchmark::ClobberMemory();
+    }
+}
+
+static void BM_count_avx(benchmark::State& state)
+{
+    // const size_t text_size = 1024 * 1024 * 1024; // 1GB
+    const size_t text_size = state.range(0);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint8_t> dist(0, 255);
+
+    std::string input;
+    input.reserve(text_size);
+    for(int i = 0; i < text_size; ++i)
+    {
+	input.push_back(dist(gen));
+    }
+
+    size_t result;
+    for(auto _ : state)
+    {
+	count_numbers_avx(input.data(), input.size(), &result);
+	benchmark::DoNotOptimize(&result);
+	benchmark::ClobberMemory();
+    }
+}
+
+BENCHMARK(BM_count_basic)->RangeMultiplier(512)->Range(1024, 1024 * 1024 * 1024)->ArgName("Size (bytes).")->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_count_avx)->RangeMultiplier(512)->Range(1024, 1024 * 1024 * 1024)->ArgName("Size (bytes).")->Unit(benchmark::kMillisecond);
 BENCHMARK_MAIN();

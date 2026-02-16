@@ -1,5 +1,6 @@
 #include "functions.h"
 
+#include <cctype>
 #include <emmintrin.h>
 #include <pmmintrin.h>
 #include <immintrin.h>
@@ -407,5 +408,57 @@ void branchless_computation_avx(const float* const src, const size_t size, float
 
 	_mm256_storeu_ps(result + i, answer);
     }
+}
+
+void count_numbers(const char* const src, const size_t size, size_t* const result)
+{
+    size_t count = 0; 
+    for(size_t i = 0; i < size; ++i)
+    {
+	if (std::isdigit(src[i])) {
+	    ++count;	
+	}
+    }
+
+    *result = count;
+}
+
+__attribute__((target("avx2"))) 
+void count_numbers_avx(const char* const src, const size_t size, size_t* const result)
+{
+    __m256i zero_ascii = _mm256_set1_epi8('0');
+    __m256i nine_ascii = _mm256_set1_epi8('9');
+
+    size_t count = 0;
+    size_t i = 0;
+    for(; i + 31 < size; i+=32)
+    {
+	__m256i vec = _mm256_loadu_si256((__m256i*)( src + i));
+
+	__m256i bigger_than_zero = _mm256_cmpgt_epi8(vec, zero_ascii); // a > 0
+	__m256i equal_to_zero = _mm256_cmpeq_epi8(vec, zero_ascii); // a == 0
+	__m256i equal_to_nine = _mm256_cmpeq_epi8(vec, nine_ascii); // a == 9
+	__m256i smaller_than_nine = _mm256_cmpgt_epi8(nine_ascii, vec); // 9 > a
+
+	__m256i numbers_mask = _mm256_and_si256(bigger_than_zero, smaller_than_nine); // a > 0 && 9 > a => 9 > a > 0
+
+	int numbers_mask_int = _mm256_movemask_epi8(numbers_mask);
+	int zero_mask_int = _mm256_movemask_epi8(equal_to_zero);
+	int nine_mask_int = _mm256_movemask_epi8(equal_to_nine);
+
+	count += _mm_popcnt_u32(numbers_mask_int);
+	count += _mm_popcnt_u32(zero_mask_int);
+	count += _mm_popcnt_u32(nine_mask_int);
+    }
+
+    for(;i < size; ++i)
+    {
+	if (src[i] > '0' && src[i] < '9')
+	{
+	    ++count;
+	}
+    }
+
+    *result = count;
 }
 

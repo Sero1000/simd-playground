@@ -462,3 +462,42 @@ void count_numbers_avx(const char* const src, const size_t size, size_t* const r
     *result = count;
 }
 
+__attribute__((target("avx2"))) 
+void convert_lowercase_uppercase(const char* const src, const size_t size, char* const result)
+{
+    __m256i a_ascii = _mm256_set1_epi8('a');
+    __m256i z_ascii = _mm256_set1_epi8('z');
+    __m256i z_sub_a_ascii = _mm256_set1_epi8(26);
+    __m256i convert_mask = _mm256_set1_epi8(0b00100000);
+
+    size_t i = 0;
+    for(;i + 31 < size; i += 32)
+    {
+	__m256i vec = _mm256_loadu_si256((__m256i*)(src + i));
+
+	__m256i lowercase = _mm256_or_si256(vec, convert_mask);
+
+	__m256i lowercase_sub_a = _mm256_sub_epi8(lowercase, a_ascii);
+
+	__m256i is_letter = _mm256_cmpgt_epi8(z_sub_a_ascii, lowercase_sub_a);
+
+	__m256i flip_mask = _mm256_and_si256(is_letter, convert_mask);
+
+	__m256i converted = _mm256_xor_si256(vec, flip_mask);
+
+	_mm256_storeu_si256((__m256i*)(result + i), converted);
+    }
+
+
+    for(;i < size; ++i)
+    {
+	char current = src[i];
+	char lowercase = current | 0b00100000;
+
+	if (lowercase > 'a' && lowercase < 'z')
+	{
+
+	    result[i] = current ^ 0b00100000;
+	}
+    }
+}

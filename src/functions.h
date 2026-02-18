@@ -41,3 +41,5 @@ extern "C" void branchless_computation_avx(const float* const src, const size_t 
 extern "C" void count_numbers(const char* const src, const size_t size, size_t* const result);
 
 extern "C" void count_numbers_avx(const char* const src, const size_t size, size_t* const result);
+
+extern "C" void convert_lowercase_uppercase(const char* const src, const size_t size, char* const result);

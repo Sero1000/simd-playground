@@ -224,3 +224,24 @@ TEST(Count, AVX)
 
     EXPECT_EQ(avxResult, number_count);
 }
+
+TEST(Convert, AVX)
+{
+    constexpr size_t SIZE = 64;
+    std::string test_input;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint8_t> dist('a', 'z');
+
+    for(int i = 0; i < SIZE; ++i)
+    {
+	test_input.push_back(dist(gen));
+    }
+    std::cout<<test_input<<std::endl;
+
+    std::string result(SIZE, '1');
+
+    convert_lowercase_uppercase(test_input.data(), test_input.size(), result.data());
+    std::cout<<result<<std::endl;
+}
